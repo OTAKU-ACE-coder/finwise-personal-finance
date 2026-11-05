@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8f4f0" />
+    <title>FinWise — Personal finance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#overview" aria-label="FinWise home"><span class="brand-mark">f</span><span class="brand-name">finwise</span></a>
+      <div class="nav-label">MENU</div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="nav-item active" data-page="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
+        <button class="nav-item" data-page="transactions"><span class="nav-icon">↕</span><span>Transactions</span></button>
+        <button class="nav-item" data-page="budgets"><span class="nav-icon">◷</span><span>Budgets</span></button>
+        <button class="nav-item" data-page="pots"><span class="nav-icon">♧</span><span>Pots</span></button>
+        <button class="nav-item" data-page="bills"><span class="nav-icon">▤</span><span>Recurring bills</span></button>
+      </nav>
+      <div class="sidebar-bottom"><div class="help-card"><span class="help-spark">✦</span><strong>Money feeling messy?</strong><p>A little clarity goes a long way.</p><button data-page="budgets">Review your budgets <span>→</span></button></div><button class="collapse-btn" id="collapseBtn"><span>◧</span> Minimize menu</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button><div class="breadcrumb">Personal finance <span>/</span> <b id="crumb">Overview</b></div><div class="top-actions"><button class="icon-button" aria-label="Notifications">♧<i></i></button><div class="avatar">JD</div><span class="user-name">Jordan Davis</span><button class="chevron">⌄</button></div></header>
+      <div class="page-wrap">
+        <section class="page active" id="page-overview"></section>
+        <section class="page" id="page-transactions"></section>
+        <section class="page" id="page-budgets"></section>
+        <section class="page" id="page-pots"></section>
+        <section class="page" id="page-bills"></section>
+      </div>
+      <nav class="mobile-nav" aria-label="Mobile navigation"><button class="active" data-page="overview"><span>◫</span>Overview</button><button data-page="transactions"><span>↕</span>Transactions</button><button data-page="budgets"><span>◷</span>Budgets</button><button data-page="pots"><span>♧</span>Pots</button><button data-page="bills"><span>▤</span>Bills</button></nav>
+    </main>
+    <div class="toast" id="toast" role="status"></div>
+    <dialog id="modal"></dialog>
+  </body>
+</html>

@@ -2,6 +2,16 @@
 
 FinWise is a personal finance tracker that runs on your computer.
 
+## Preview
+
+### Dashboard
+
+![FinWise dashboard preview](previews/dashboard.png)
+
+### Notifications
+
+![FinWise notification panel preview](previews/notifications.png)
+
 ## Start the app
 
 1. Install Node.js 24 or newer.

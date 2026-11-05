@@ -1,0 +1,24 @@
+# FinWise
+
+FinWise is a personal finance tracker that runs on your computer.
+
+## Start the app
+
+1. Install Node.js 24 or newer.
+2. Open a terminal in this folder.
+3. Run `npm start`.
+4. Open `http://localhost:3000` in your browser.
+
+The app has no external package dependencies. It serves the web pages and handles account sign-up and sign-in from `server.js`.
+
+## How the files fit together
+
+- `index.html` is the page frame and navigation.
+- `styles.css` controls the colors, layout, and small-screen view.
+- `app.js` draws each screen, handles buttons, and saves changes.
+- `server.js` serves the app, checks sign-up and sign-in, hashes passwords, and stores each account's finance data separately.
+- `.finwise/users.json` is created on this computer when the first account is registered. It is excluded from Git.
+
+Passwords are never saved in the browser. The server stores a one-way password hash. Sign-in sessions last until the server restarts or the cookie expires.
+
+This is a local development app. Put it behind HTTPS and add database backups, sign-in rate limits, and recovery flows before hosting it publicly.

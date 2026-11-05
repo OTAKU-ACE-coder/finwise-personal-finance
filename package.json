@@ -1,0 +1,10 @@
+{
+  "name": "finwise-personal-finance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local personal finance tracker",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
+

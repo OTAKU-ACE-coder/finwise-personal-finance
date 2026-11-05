@@ -9,6 +9,8 @@ const ROOT = __dirname;
 const PRIVATE_DIR = path.join(ROOT, '.finwise');
 const USERS_FILE = path.join(PRIVATE_DIR, 'users.json');
 const PORT = Number(process.env.PORT || 3000);
+const PHONE_PREVIEW = process.argv.includes('--phone-preview');
+const HOST = PHONE_PREVIEW ? '0.0.0.0' : '127.0.0.1';
 const sessions = new Map();
 const staticFiles = {
   '/': ['index.html', 'text/html; charset=utf-8'],
@@ -136,7 +138,11 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
-    if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
+    if (url.pathname.startsWith('/api/')) {
+      if (PHONE_PREVIEW && req.method === 'GET' && url.pathname === '/api/session') return sendJson(res, 200, { user: null });
+      if (PHONE_PREVIEW) return sendJson(res, 403, { error: 'Sign-in is disabled in phone preview mode.' });
+      return await handleApi(req, res, url);
+    }
     if (req.method !== 'GET' || !staticFiles[url.pathname]) return sendJson(res, 404, { error: 'Page not found.' });
     const [file, type] = staticFiles[url.pathname];
     const content = await fs.readFile(path.join(ROOT, file));
@@ -148,7 +154,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`FinWise is running at http://127.0.0.1:${PORT}`);
-  console.log('Account data is stored locally in the private .finwise folder.');
+server.listen(PORT, HOST, () => {
+  console.log(`FinWise is listening on ${HOST}:${PORT}`);
+  if (PHONE_PREVIEW) console.log(`On the same Wi-Fi, open http://<this-computer-ip>:${PORT} on your phone. Sign-in is disabled; only sample data is available.`);
+  else console.log('Open http://localhost:3000 in your browser. Account data is stored locally in .finwise.');
 });

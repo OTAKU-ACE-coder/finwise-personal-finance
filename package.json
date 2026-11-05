@@ -4,7 +4,8 @@
   "private": true,
   "description": "A local personal finance tracker",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "preview:phone": "node server.js --phone-preview"
   }
 }
 

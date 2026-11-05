@@ -9,6 +9,10 @@ FinWise is a personal finance tracker that runs on your computer.
 3. Run `npm start`.
 4. Open `http://localhost:3000` in your browser.
 
+## Phone preview
+
+For a preview on a phone connected to the same Wi-Fi, run `npm run preview:phone`. Find this computer's IPv4 address with `ipconfig`, then open `http://<computer-ip>:3000` on the phone. Phone preview mode disables sign-up, sign-in, and account APIs; it only serves the app and sample data.
+
 The app has no external package dependencies. It serves the web pages and handles account sign-up and sign-in from `server.js`.
 
 ## How the files fit together

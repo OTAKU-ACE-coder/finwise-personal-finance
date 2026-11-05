@@ -1,6 +1,10 @@
 # FinWise
 
-FinWise is a personal finance tracker that runs on your computer.
+FinWise is a personal finance tracker with a free hosted preview and a local account-enabled version.
+
+## Open the hosted preview
+
+Visit <https://otaku-ace-coder.github.io/finwise-personal-finance/> on a computer or phone. In the hosted preview, changes are saved in that browser only. Sign-up and account sync are available in the local version below.
 
 ## Preview
 
@@ -37,4 +41,4 @@ Settings include currency display, a light/dark theme, and a profile photo. Phot
 
 Passwords are never saved in the browser. The server stores a one-way password hash. Sign-in sessions last until the server restarts or the cookie expires.
 
-This is a local development app. Put it behind HTTPS and add database backups, sign-in rate limits, and recovery flows before hosting it publicly.
+The GitHub Pages version serves only the static demo files. Account data and passwords are not collected by that hosted preview.

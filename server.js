@@ -79,7 +79,7 @@ async function handleApi(req, res, url) {
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = (await passwordHash(password, salt)).toString('hex');
     const finance = structuredClone(body.finance);
-    finance.account = { name, email };
+    finance.account = { ...(finance.account || {}), name, email };
     const user = { id: crypto.randomUUID(), name, email, salt, hash, finance };
     users.push(user);
     await writeUsers(users);
@@ -123,7 +123,7 @@ async function handleApi(req, res, url) {
     const user = users.find(item => item.id === userId);
     if (!user) return sendJson(res, 401, { error: 'Sign in again to continue.' });
     user.finance = structuredClone(body.finance);
-    user.finance.account = { name: user.name, email: user.email };
+    user.finance.account = { ...(user.finance.account || {}), name: user.name, email: user.email };
     await writeUsers(users);
     return sendJson(res, 200, { ok: true });
   }

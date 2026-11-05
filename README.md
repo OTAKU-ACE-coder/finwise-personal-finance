@@ -19,6 +19,8 @@ The app has no external package dependencies. It serves the web pages and handle
 - `server.js` serves the app, checks sign-up and sign-in, hashes passwords, and stores each account's finance data separately.
 - `.finwise/users.json` is created on this computer when the first account is registered. It is excluded from Git.
 
+Settings include currency display, a light/dark theme, and a profile photo. Photos are resized in the browser before they are saved with the account.
+
 Passwords are never saved in the browser. The server stores a one-way password hash. Sign-in sessions last until the server restarts or the cookie expires.
 
 This is a local development app. Put it behind HTTPS and add database backups, sign-in rate limits, and recovery flows before hosting it publicly.

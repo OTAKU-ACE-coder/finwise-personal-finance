@@ -6,11 +6,11 @@ const { promisify } = require('node:util');
 
 const scrypt = promisify(crypto.scrypt);
 const ROOT = __dirname;
-const PRIVATE_DIR = path.join(ROOT, '.finwise');
+const PRIVATE_DIR = process.env.FINWISE_DATA_DIR || path.join(ROOT, '.finwise');
 const USERS_FILE = path.join(PRIVATE_DIR, 'users.json');
 const PORT = Number(process.env.PORT || 3000);
 const PHONE_PREVIEW = process.argv.includes('--phone-preview');
-const HOST = PHONE_PREVIEW ? '0.0.0.0' : '127.0.0.1';
+const HOST = PHONE_PREVIEW ? '0.0.0.0' : (process.env.FINWISE_HOST || '127.0.0.1');
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const googleRedirect = process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/api/google/callback`;
@@ -242,5 +242,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   console.log(`FinWise is listening on ${HOST}:${PORT}`);
   if (PHONE_PREVIEW) console.log(`On the same Wi-Fi, open http://<this-computer-ip>:${PORT} on your phone. Sign-in is disabled; only sample data is available.`);
-  else console.log('Open http://localhost:3000 in your browser. Account data is stored locally in .finwise.');
+  else if (HOST === '127.0.0.1') console.log(`Open http://localhost:${PORT} in your browser.`);
 });

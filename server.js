@@ -12,6 +12,7 @@ const PORT = Number(process.env.PORT || 3000);
 const PHONE_PREVIEW = process.argv.includes('--phone-preview');
 const HOST = PHONE_PREVIEW ? '0.0.0.0' : '127.0.0.1';
 const sessions = new Map();
+let pendingUserWrite = Promise.resolve();
 const staticFiles = {
   '/': ['index.html', 'text/html; charset=utf-8'],
   '/index.html': ['index.html', 'text/html; charset=utf-8'],
@@ -28,6 +29,16 @@ async function writeUsers(users) {
   const temporaryFile = `${USERS_FILE}.tmp`;
   await fs.writeFile(temporaryFile, JSON.stringify(users, null, 2), { mode: 0o600 });
   await fs.rename(temporaryFile, USERS_FILE);
+}
+function updateUsers(update) {
+  const result = pendingUserWrite.then(async () => {
+    const users = await readUsers();
+    const user = update(users);
+    if (user) await writeUsers(users);
+    return user;
+  });
+  pendingUserWrite = result.catch(() => {});
+  return result;
 }
 function sendJson(res, status, body, extraHeaders = {}) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...extraHeaders });
@@ -76,15 +87,17 @@ async function handleApi(req, res, url) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return sendJson(res, 400, { error: 'Enter a valid email address.' });
     if (password.length < 8 || password.length > 128) return sendJson(res, 400, { error: 'Use a password between 8 and 128 characters.' });
     if (!validateFinance(body.finance)) return sendJson(res, 400, { error: 'The account data is missing or too large.' });
-    const users = await readUsers();
-    if (users.some(user => user.email === email)) return sendJson(res, 409, { error: 'An account with this email already exists. Try signing in.' });
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = (await passwordHash(password, salt)).toString('hex');
     const finance = structuredClone(body.finance);
     finance.account = { ...(finance.account || {}), name, email };
     const user = { id: crypto.randomUUID(), name, email, salt, hash, finance };
-    users.push(user);
-    await writeUsers(users);
+    const created = await updateUsers(users => {
+      if (users.some(existing => existing.email === email)) return null;
+      users.push(user);
+      return user;
+    });
+    if (!created) return sendJson(res, 409, { error: 'An account with this email already exists. Try signing in.' });
     const id = crypto.randomBytes(32).toString('base64url');
     sessions.set(id, user.id);
     return sendJson(res, 201, { user: publicUser(user), finance }, { 'Set-Cookie': sessionCookie(id) });
@@ -121,12 +134,14 @@ async function handleApi(req, res, url) {
   if (req.method === 'PUT' && url.pathname === '/api/data') {
     const body = await readBody(req);
     if (!validateFinance(body.finance)) return sendJson(res, 400, { error: 'The account data is missing or too large.' });
-    const users = await readUsers();
-    const user = users.find(item => item.id === userId);
+    const user = await updateUsers(users => {
+      const account = users.find(item => item.id === userId);
+      if (!account) return null;
+      account.finance = structuredClone(body.finance);
+      account.finance.account = { ...(account.finance.account || {}), name: account.name, email: account.email };
+      return account;
+    });
     if (!user) return sendJson(res, 401, { error: 'Sign in again to continue.' });
-    user.finance = structuredClone(body.finance);
-    user.finance.account = { ...(user.finance.account || {}), name: user.name, email: user.email };
-    await writeUsers(users);
     return sendJson(res, 200, { ok: true });
   }
   return sendJson(res, 404, { error: 'API route not found.' });

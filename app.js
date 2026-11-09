@@ -39,6 +39,9 @@ const seed = {
 let data;
 try { data = { ...seed, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch { data = structuredClone(seed); }
 let currentUser = null;
+let signingOut = false;
+let pendingAccountSave = Promise.resolve();
+let unsyncedSnapshot = null;
 let nextId=Math.max(Date.now(),0,...data.transactions.map(t=>Number(t.id)||0),...data.bills.map(b=>Number(b.id)||0));
 const createId=()=>++nextId;
 function normalizeBills(){data.bills=(data.bills||[]).map(bill=>({...bill,id:Number.isSafeInteger(Number(bill.id))&&Number(bill.id)>0?Number(bill.id):createId(),paidMonth:bill.paid?(bill.paidMonth||bill.date?.slice(0,7)):bill.paidMonth}));}
@@ -55,7 +58,41 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 function save(){
   const snapshot=JSON.stringify(data);
   localStorage.setItem(STORE,snapshot);
-  if(currentUser){clearTimeout(save.timer);save.timer=setTimeout(()=>fetch('/api/data',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({finance:JSON.parse(snapshot)})}).then(response=>{if(!response.ok)toast('Saved on this device, but account sync failed.');}).catch(()=>toast('Saved on this device, but the server is offline.')),250);}
+  if(currentUser){
+    unsyncedSnapshot=snapshot;
+    clearTimeout(save.timer);
+    save.timer=setTimeout(()=>{
+      pendingAccountSave=pendingAccountSave.then(syncAccount).catch(()=>toast('Saved on this device, but account sync failed.'));
+    },250);
+  }
+}
+async function syncAccount(){
+  const snapshot=unsyncedSnapshot;
+  if(snapshot===null)return;
+  await api('/api/data',{method:'PUT',body:`{"finance":${snapshot}}`});
+  if(unsyncedSnapshot===snapshot)unsyncedSnapshot=null;
+}
+async function signOut(){
+  if(!currentUser||signingOut)return;
+  signingOut=true;
+  document.body.inert=true;
+  clearTimeout(save.timer);
+  try{
+    await pendingAccountSave;
+    if(unsyncedSnapshot!==null)await syncAccount();
+    await api('/api/logout',{method:'POST',body:'{}'});
+    currentUser=null;
+    data=structuredClone(seed);
+    localStorage.removeItem(STORE);
+    render();
+    go('settings');
+    toast('Signed out.');
+  }catch(error){
+    toast(`Could not sign out. ${error.message}`);
+  }finally{
+    signingOut=false;
+    document.body.inert=false;
+  }
 }
 function updateBalance(change){data.balance=Math.round((data.balance+change)*100)/100;}
 async function api(path,options={}){
@@ -133,7 +170,7 @@ function renderSettings(){
  document.querySelector('#page-settings').innerHTML=shell('MAKE FINWISE YOURS','Settings','Choose how FinWise looks and manage your account.')+`<div class="settings-grid"><article class="card settings-card"><h2>Currency</h2><p>Choose the currency you want to see throughout FinWise. New users start with US dollars.</p><label class="field"><span>Display currency</span><select id="currency-setting">${currencies.map(([code,label])=>`<option value="${code}" ${data.currency===code?'selected':''}>${label} (${code})</option>`).join('')}</select></label><div class="currency-preview">Example: <strong>${money(1234.56)}</strong></div><p class="local-account-note">Changing this setting changes the currency label and number format. It does not convert existing amounts.</p></article>${themeCard}${photoCard}${accountCard}</div>`;
 }
 const renderers={overview:renderOverview,transactions:renderTransactions,reports:renderReports,budgets:renderBudgets,pots:renderPots,bills:renderBills,settings:renderSettings};
-function render(){Object.values(renderers).forEach(fn=>fn());const account=data.account||seed.account;document.documentElement.dataset.theme=data.theme==='dark'?'dark':'light';document.querySelector('.user-name').textContent=account.name;const avatar=document.querySelector('.avatar');avatar.textContent=account.photo?'':account.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase();avatar.style.backgroundImage=account.photo?`url("${account.photo}")`:'';renderNotifications();}
+function render(){document.querySelector('#header-signout').hidden=!currentUser;Object.values(renderers).forEach(fn=>fn());const account=data.account||seed.account;document.documentElement.dataset.theme=data.theme==='dark'?'dark':'light';document.querySelector('.user-name').textContent=account.name;const avatar=document.querySelector('.avatar');avatar.textContent=account.photo?'':account.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase();avatar.style.backgroundImage=account.photo?`url("${account.photo}")`:'';renderNotifications();}
 function go(page){ if(!renderers[page])return; document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${page}`)); document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); document.querySelector('#crumb').textContent=page==='bills'?'Recurring bills':page[0].toUpperCase()+page.slice(1); document.querySelector('#sidebar').classList.remove('mobile-open');closeNotifications(); }
 function toast(msg){const el=document.querySelector('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),2600);}
 function buildNotifications(){
@@ -154,7 +191,7 @@ const select=(name,label,opts)=>`<div class="field"><label>${label}</label><sele
 function formAction(action,index){
  if(action==='export-transactions'){exportTransactions();return;}
  if(action==='remove-photo'){data.account={...(data.account||seed.account),photo:''};save();render();go('settings');toast('Profile picture removed.');return;}
- if(action==='logout'){api('/api/logout',{method:'POST',body:'{}'}).catch(()=>{});currentUser=null;data=structuredClone(seed);localStorage.removeItem(STORE);render();go('settings');toast('Signed out.');return;}
+ if(action==='logout'){void signOut();return;}
  if(action==='add-transaction')openModal('Add transaction','Keep your activity up to date.',inp('name','Description','text','e.g. Coffee shop')+select('category','Category',['Groceries','Dining out','Shopping','Transport','Bills','Health','Entertainment','Income','Other'])+inp('amount','Amount','number','0.00')+select('type','Type',['Expense','Income'])+inp('date','Date','date',localDate()),f=>{const amount=Number(f.get('amount'));if(!amount)return false;const income=f.get('type')==='Income';data.transactions.push({id:createId(),name:f.get('name').trim(),category:f.get('category'),date:f.get('date'),amount:income?amount:-amount,icon:income?'↗':'•',color:income?'#e5f1ef':'#f5eadc'});updateBalance(income?amount:-amount);const b=data.budgets.find(b=>b.name===f.get('category'));if(b&&!income&&f.get('date').startsWith(currentMonth()))b.spent+=amount;return true;});
  if(action==='add-budget')openModal('Create a budget','Choose a category and set a monthly limit.',inp('name','Budget name')+inp('limit','Monthly limit','number','0.00')+select('color','Color',['#277c78','#dd8c57','#8265a7','#5b8db8','#d7749a']),f=>{const name=f.get('name').trim(),limit=Number(f.get('limit'));if(!limit)return false;if(data.budgets.some(b=>b.name.toLowerCase()===name.toLowerCase())){toast('A budget with that name already exists.');return false;}data.budgets.push({name,limit,spent:0,color:f.get('color'),icon:'◈'});return true;});
  if(action==='add-pot')openModal('Create a savings pot','Name a goal and decide how much you want to save.',inp('name','Pot name')+inp('target','Savings target','number','0.00')+inp('note','A note (optional)','text','What are you saving for?',false),f=>{const target=Number(f.get('target'));if(!target)return false;data.pots.push({name:f.get('name').trim(),saved:0,target,icon:'✦',color:'#e5f1ef',note:f.get('note')});return true;});
@@ -185,7 +222,7 @@ document.addEventListener('change',e=>{if(e.target.id==='tx-category')renderTran
 document.addEventListener('change',e=>{if(e.target.id==='currency-setting'){data.currency=e.target.value;save();render();go('settings');toast('Currency preference saved.');}});
 document.addEventListener('change',e=>{if(e.target.id==='theme-setting'){data.theme=e.target.value;save();render();go('settings');toast(`${e.target.value==='dark'?'Dark':'Light'} theme saved.`);}});
 document.addEventListener('click',e=>{if(e.target.closest('#change-profile-photo'))document.querySelector('#profile-photo-input')?.click();});
-document.addEventListener('change',async e=>{if(e.target.id!=='profile-photo-input'||!e.target.files?.[0])return;try{const photo=await resizeProfilePhoto(e.target.files[0]);data.account={...(data.account||seed.account),photo};save();render();go('settings');toast('Profile picture saved.');}catch(error){toast(error.message||'Could not load that image.');}});
+document.addEventListener('change',async e=>{if(e.target.id!=='profile-photo-input'||!e.target.files?.[0])return;const owner=currentUser;try{const photo=await resizeProfilePhoto(e.target.files[0]);if(signingOut||currentUser!==owner)return;data.account={...(data.account||seed.account),photo};save();render();go('settings');toast('Profile picture saved.');}catch(error){toast(error.message||'Could not load that image.');}});
 document.addEventListener('submit',async e=>{
  const form=e.target;if(!['signup-form','login-form'].includes(form.id))return;e.preventDefault();const f=new FormData(form);
  try{

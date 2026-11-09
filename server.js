@@ -6,15 +6,11 @@ const { promisify } = require('node:util');
 
 const scrypt = promisify(crypto.scrypt);
 const ROOT = __dirname;
-const PRIVATE_DIR = process.env.FINWISE_DATA_DIR || path.join(ROOT, '.finwise');
+const PRIVATE_DIR = path.join(ROOT, '.finwise');
 const USERS_FILE = path.join(PRIVATE_DIR, 'users.json');
 const PORT = Number(process.env.PORT || 3000);
 const PHONE_PREVIEW = process.argv.includes('--phone-preview');
-const HOST = PHONE_PREVIEW ? '0.0.0.0' : (process.env.FINWISE_HOST || '127.0.0.1');
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const googleRedirect = process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/api/google/callback`;
-const googleEnabled = Boolean(googleClientId && googleClientSecret);
+const HOST = PHONE_PREVIEW ? '0.0.0.0' : '127.0.0.1';
 const sessions = new Map();
 let pendingUserWrite = Promise.resolve();
 const staticFiles = {
@@ -82,63 +78,6 @@ function validateFinance(value) {
 }
 
 async function handleApi(req, res, url) {
-  if (req.method === 'GET' && url.pathname === '/api/google/start' && googleEnabled) {
-    const state = crypto.randomBytes(32).toString('base64url');
-    const authorization = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    authorization.search = new URLSearchParams({
-      client_id: googleClientId, redirect_uri: googleRedirect, response_type: 'code', scope: 'openid email profile', state
-    });
-    res.writeHead(302, {
-      Location: authorization.href,
-      'Cache-Control': 'no-store',
-      'Set-Cookie': googleStateCookie(state, 600)
-    });
-    return res.end();
-  }
-  if (req.method === 'GET' && url.pathname === '/api/google/callback' && googleEnabled) {
-    res.setHeader('Set-Cookie', googleStateCookie('', 0));
-    const state = url.searchParams.get('state');
-    const code = url.searchParams.get('code');
-    const expected = (req.headers.cookie || '').match(/(?:^|;\s*)finwise_google_state=([\w-]+)/)?.[1];
-    if (!code || !expected || state !== expected) return redirectHome(res, 'error');
-
-    try {
-      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        body: new URLSearchParams({ code, client_id: googleClientId, client_secret: googleClientSecret, redirect_uri: googleRedirect, grant_type: 'authorization_code' }),
-        signal: AbortSignal.timeout(10000)
-      });
-      if (!tokenResponse.ok) return redirectHome(res, 'error');
-      const { access_token: token } = await tokenResponse.json();
-      if (!token) return redirectHome(res, 'error');
-      const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(10000)
-      });
-      if (!profileResponse.ok) return redirectHome(res, 'error');
-      const profile = await profileResponse.json();
-      if (!profile.sub || !profile.email || profile.email_verified !== true) return redirectHome(res, 'error');
-      const email = profile.email.toLowerCase();
-      const user = await updateUsers(users => {
-        const existing = users.find(account => account.googleSubject === profile.sub);
-        if (existing) return existing;
-        if (users.some(account => account.email === email)) return null;
-        const name = (profile.name || email.split('@')[0]).slice(0, 80);
-        const finance = { account: { name, email }, balance: 0, transactions: [], budgets: [], pots: [], bills: [] };
-        const account = { id: crypto.randomUUID(), googleSubject: profile.sub, name, email, finance };
-        users.push(account);
-        return account;
-      });
-      if (!user) return redirectHome(res, 'existing');
-      const id = crypto.randomBytes(32).toString('base64url');
-      sessions.delete(sessionId(req));
-      sessions.set(id, user.id);
-      res.setHeader('Set-Cookie', [googleStateCookie('', 0), sessionCookie(id)]);
-      return redirectHome(res, 'success');
-    } catch {
-      return redirectHome(res, 'error');
-    }
-  }
   if (req.method === 'POST' && url.pathname === '/api/signup') {
     const body = await readBody(req);
     const name = String(body.name || '').trim();
@@ -170,7 +109,7 @@ async function handleApi(req, res, url) {
     const password = String(body.password || '');
     const users = await readUsers();
     const user = users.find(item => item.email === email);
-    if (!user?.hash) return sendJson(res, 401, { error: 'Email or password is incorrect.' });
+    if (!user) return sendJson(res, 401, { error: 'Email or password is incorrect.' });
     const attempt = await passwordHash(password, user.salt);
     const expected = Buffer.from(user.hash, 'hex');
     if (attempt.length !== expected.length || !crypto.timingSafeEqual(attempt, expected)) return sendJson(res, 401, { error: 'Email or password is incorrect.' });
@@ -186,10 +125,10 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true }, { 'Set-Cookie': sessionCookie('', 0) });
   }
   if (req.method === 'GET' && url.pathname === '/api/session') {
-    if (!userId) return sendJson(res, 200, { user: null, googleEnabled });
+    if (!userId) return sendJson(res, 200, { user: null });
     const user = (await readUsers()).find(item => item.id === userId);
     if (!user) return sendJson(res, 200, { user: null });
-    return sendJson(res, 200, { user: publicUser(user), finance: user.finance, googleEnabled });
+    return sendJson(res, 200, { user: publicUser(user), finance: user.finance });
   }
   if (!userId) return sendJson(res, 401, { error: 'Sign in to access this account.' });
   if (req.method === 'PUT' && url.pathname === '/api/data') {
@@ -206,15 +145,6 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
   return sendJson(res, 404, { error: 'API route not found.' });
-}
-
-function googleStateCookie(value, maxAge) {
-  const secure = new URL(googleRedirect).protocol === 'https:' ? '; Secure' : '';
-  return `finwise_google_state=${value}; HttpOnly; SameSite=Lax; Path=/api/google; Max-Age=${maxAge}${secure}`;
-}
-function redirectHome(res, result) {
-  res.writeHead(303, { Location: `/?google=${result}`, 'Cache-Control': 'no-store' });
-  res.end();
 }
 
 const server = http.createServer(async (req, res) => {
@@ -242,5 +172,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   console.log(`FinWise is listening on ${HOST}:${PORT}`);
   if (PHONE_PREVIEW) console.log(`On the same Wi-Fi, open http://<this-computer-ip>:${PORT} on your phone. Sign-in is disabled; only sample data is available.`);
-  else if (HOST === '127.0.0.1') console.log(`Open http://localhost:${PORT} in your browser.`);
+  else console.log('Open http://localhost:3000 in your browser. Account data is stored locally in .finwise.');
 });

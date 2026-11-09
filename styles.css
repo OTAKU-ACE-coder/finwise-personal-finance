@@ -1998,11 +1998,6 @@ html[data-theme="dark"] .text-btn {
 #account-panel button + button {
   margin-left: 8px;
 }
-#account-panel a,
-#account-panel small {
-  display: block;
-  margin-top: 12px;
-}
 .notifications-panel[hidden] {
   display:none!important
 }

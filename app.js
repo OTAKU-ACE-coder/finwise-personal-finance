@@ -39,7 +39,6 @@ const seed = {
 let data;
 try { data = { ...seed, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch { data = structuredClone(seed); }
 let currentUser = null;
-let googleEnabled = false;
 let signingOut = false;
 let pendingAccountSave = Promise.resolve();
 let unsyncedSnapshot = null;
@@ -178,8 +177,7 @@ function renderAccount(){
   avatar.textContent=account.photo?'':account.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase();
   avatar.style.backgroundImage=account.photo?`url("${account.photo}")`:'';
   const status=currentUser?esc(currentUser.email):isHostedPreview?'Guest · Hosted demo':'Guest · Sign in to save to your account';
-  const google=googleEnabled?'<a href="/api/google/start">Continue with Google</a>':isHostedPreview?'<small>Google sign-in requires an account server.</small>':'';
-  document.querySelector('#account-panel').innerHTML=`<strong>${esc(account.name)}</strong><p>${status}</p><button class="row-action" type="button" data-page="settings">${currentUser||isHostedPreview?'Account settings':'Sign in or create an account'}</button>${currentUser?'<button class="row-action" type="button" data-action="logout">Sign out</button>':google}`;
+  document.querySelector('#account-panel').innerHTML=`<strong>${esc(account.name)}</strong><p>${status}</p><button class="row-action" type="button" data-page="settings">${currentUser||isHostedPreview?'Account settings':'Sign in or create an account'}</button>${currentUser?'<button class="row-action" type="button" data-action="logout">Sign out</button>':''}`;
 }
 function render(){Object.values(renderers).forEach(fn=>fn());document.documentElement.dataset.theme=data.theme==='dark'?'dark':'light';renderAccount();renderNotifications();}
 function go(page){ if(!renderers[page])return; document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${page}`)); document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); document.querySelector('#crumb').textContent=page==='bills'?'Recurring bills':page[0].toUpperCase()+page.slice(1); document.querySelector('#sidebar').classList.remove('mobile-open');closeNotifications(); }
@@ -263,7 +261,6 @@ document.querySelector('#modal').addEventListener('click',e=>{if(e.target===e.cu
 async function startApp(){
   if(!isHostedPreview)try{
     const session=await api('/api/session');
-    googleEnabled=session.googleEnabled===true;
     if(session.user){
       currentUser=session.user;
       data={...seed,...session.finance,account:{...(session.finance.account||{}),name:currentUser.name,email:currentUser.email}};
@@ -274,12 +271,6 @@ async function startApp(){
   rollRecurringBills();
   render();
   go('overview');
-  const result=new URLSearchParams(location.search).get('google');
-  if(!isHostedPreview&&result){
-    history.replaceState(null,'',location.pathname+location.hash);
-    if(result==='success'&&currentUser)toast('Signed in with Google.');
-    else toast(result==='existing'?'This email already has a FinWise account. Sign in with your password.':'Google sign-in could not be completed.');
-  }
 }
 startApp();
 

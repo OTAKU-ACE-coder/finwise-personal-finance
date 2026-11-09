@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f8f4f0" />
+    <meta name="theme-color" content="#f3f6f4" />
     <title>FinWise — Personal finance</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,26 +16,28 @@
       <a class="brand" href="#overview" aria-label="FinWise home"><span class="brand-mark">f</span><span class="brand-name">finwise</span></a>
       <div class="nav-label">MENU</div>
       <nav class="nav" aria-label="Main navigation">
-        <button class="nav-item active" data-page="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
-        <button class="nav-item" data-page="transactions"><span class="nav-icon">↕</span><span>Transactions</span></button>
-        <button class="nav-item" data-page="budgets"><span class="nav-icon">◷</span><span>Budgets</span></button>
-        <button class="nav-item" data-page="pots"><span class="nav-icon">♧</span><span>Pots</span></button>
-        <button class="nav-item" data-page="bills"><span class="nav-icon">▤</span><span>Recurring bills</span></button>
-        <button class="nav-item" data-page="settings"><span class="nav-icon">⚙</span><span>Settings</span></button>
+        <button class="nav-item active" data-page="overview"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span><span>Overview</span></button>
+        <button class="nav-item" data-page="transactions"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16m0 0-4-4m4 4 4-4M17 20V4m0 0 4 4m-4-4-4 4"/></svg></span><span>Transactions</span></button>
+        <button class="nav-item" data-page="reports"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/><path d="M17 7h3v3"/></svg></span><span>Reports</span></button>
+        <button class="nav-item" data-page="budgets"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Budgets</span></button>
+        <button class="nav-item" data-page="pots"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8a3 3 0 0 1 6 0M12 12v5m-2.5-2.5h5"/></svg></span><span>Pots</span></button>
+        <button class="nav-item" data-page="bills"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8m-8 4h5"/></svg></span><span>Recurring bills</span></button>
+        <button class="nav-item" data-page="settings"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1.9-1.2 2.1-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.2 1.5h-2.4l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.2-2.1 1.2-.9a7.9 7.9 0 0 1 0-1.8l-1.2-.9 1.2-2.1 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h2.4l.2 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.2 2.1-1.1.9a7.9 7.9 0 0 1 0 1.8Z" transform="translate(-2 -1)"/></svg></span><span>Settings</span></button>
       </nav>
       <div class="sidebar-bottom"><div class="help-card"><span class="help-spark">✦</span><strong>Money feeling messy?</strong><p>A little clarity goes a long way.</p><button data-page="budgets">Review your budgets <span>→</span></button></div><button class="collapse-btn" id="collapseBtn"><span>◧</span> Minimize menu</button></div>
     </aside>
     <main class="main">
-      <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button><div class="breadcrumb">Personal finance <span>/</span> <b id="crumb">Overview</b></div><div class="top-actions"><div class="notification-wrap"><button class="icon-button" aria-label="Open notifications" aria-controls="notificationsPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><i hidden></i></button><section class="notifications-panel" id="notificationsPanel" role="dialog" aria-label="Notifications" hidden></section></div><div class="avatar">JD</div><span class="user-name">Jordan Davis</span><button class="chevron" aria-label="Open settings">⌄</button></div></header>
+      <header class="topbar"><button class="mobile-menu" id="mobileMenu" aria-label="Open menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="breadcrumb">Personal finance <span>/</span> <b id="crumb">Overview</b></div><div class="top-actions"><div class="notification-wrap"><button class="icon-button" aria-label="Open notifications" aria-controls="notificationsPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><i hidden></i></button><section class="notifications-panel" id="notificationsPanel" role="dialog" aria-label="Notifications" hidden></section></div><div class="avatar">JD</div><span class="user-name">Jordan Davis</span><button class="chevron" aria-label="Open settings">⌄</button></div></header>
       <div class="page-wrap">
         <section class="page active" id="page-overview"></section>
         <section class="page" id="page-transactions"></section>
+        <section class="page" id="page-reports"></section>
         <section class="page" id="page-budgets"></section>
         <section class="page" id="page-pots"></section>
         <section class="page" id="page-bills"></section>
         <section class="page" id="page-settings"></section>
       </div>
-      <nav class="mobile-nav" aria-label="Mobile navigation"><button class="active" data-page="overview"><span>◫</span>Overview</button><button data-page="transactions"><span>↕</span>Transactions</button><button data-page="budgets"><span>◷</span>Budgets</button><button data-page="pots"><span>♧</span>Pots</button><button data-page="bills"><span>▤</span>Bills</button><button data-page="settings"><span>⚙</span>Settings</button></nav>
+      <nav class="mobile-nav" aria-label="Mobile navigation"><button class="active" data-page="overview"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span>Overview</button><button data-page="transactions"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16m0 0-4-4m4 4 4-4M17 20V4m0 0 4 4m-4-4-4 4"/></svg></span>Activity</button><button data-page="reports"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/><path d="M17 7h3v3"/></svg></span>Reports</button><button data-page="budgets"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Budgets</button><button data-page="pots"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8a3 3 0 0 1 6 0M12 12v5m-2.5-2.5h5"/></svg></span>Pots</button><button data-page="bills"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8m-8 4h5"/></svg></span>Bills</button><button data-page="settings"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1.9-1.2 2.1-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.2 1.5h-2.4l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.2-2.1 1.2-.9a7.9 7.9 0 0 1 0-1.8l-1.2-.9 1.2-2.1 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h2.4l.2 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.2 2.1-1.1.9a7.9 7.9 0 0 1 0 1.8Z" transform="translate(-2 -1)"/></svg></span>Settings</button></nav>
     </main>
     <div class="toast" id="toast" role="status"></div>
     <dialog id="modal"></dialog>

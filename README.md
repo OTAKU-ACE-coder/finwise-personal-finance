@@ -29,6 +29,8 @@ For a preview on a phone connected to the same Wi-Fi, run `npm run preview:phone
 
 The app has no external package dependencies. It serves the web pages and handles account sign-up and sign-in from `server.js`.
 
+FinWise includes an overview, transaction search and filters, a six-month income and spending report, monthly budgets, savings pots, recurring bills, notifications, and light or dark display themes. Export transactions from the Transactions page as a CSV file.
+
 ## How the files fit together
 
 - `index.html` is the page frame and navigation.

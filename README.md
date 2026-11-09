@@ -23,6 +23,12 @@ Visit <https://otaku-ace-coder.github.io/finwise-personal-finance/> on a compute
 3. Run `npm start`.
 4. Open `http://localhost:3000` in your browser.
 
+## Google sign-in
+
+Create a Google OAuth client of type **Web application** and register `http://localhost:3000/api/google/callback` as an authorized redirect URI. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the environment where you run `npm start`. If you use a different origin, set `GOOGLE_REDIRECT_URI` to the matching registered callback URL. Open the app using the same origin as the callback, then open the avatar menu and choose **Continue with Google**. Google accounts start with an empty tracker.
+
+Keep the client secret on the server. The GitHub Pages demo and phone preview do not support sign-in. To offer Google sign-in publicly, deploy the account server with persistent storage over HTTPS and register its callback URL with Google.
+
 ## Phone preview
 
 For a preview on a phone connected to the same Wi-Fi, run `npm run preview:phone`. Find this computer's IPv4 address with `ipconfig`, then open `http://<computer-ip>:3000` on the phone. Phone preview mode disables sign-up, sign-in, and account APIs; it only serves the app and sample data.

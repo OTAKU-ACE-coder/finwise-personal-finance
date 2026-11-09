@@ -39,6 +39,7 @@ const seed = {
 let data;
 try { data = { ...seed, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch { data = structuredClone(seed); }
 let currentUser = null;
+let googleEnabled = false;
 let signingOut = false;
 let pendingAccountSave = Promise.resolve();
 let unsyncedSnapshot = null;
@@ -170,7 +171,17 @@ function renderSettings(){
  document.querySelector('#page-settings').innerHTML=shell('MAKE FINWISE YOURS','Settings','Choose how FinWise looks and manage your account.')+`<div class="settings-grid"><article class="card settings-card"><h2>Currency</h2><p>Choose the currency you want to see throughout FinWise. New users start with US dollars.</p><label class="field"><span>Display currency</span><select id="currency-setting">${currencies.map(([code,label])=>`<option value="${code}" ${data.currency===code?'selected':''}>${label} (${code})</option>`).join('')}</select></label><div class="currency-preview">Example: <strong>${money(1234.56)}</strong></div><p class="local-account-note">Changing this setting changes the currency label and number format. It does not convert existing amounts.</p></article>${themeCard}${photoCard}${accountCard}</div>`;
 }
 const renderers={overview:renderOverview,transactions:renderTransactions,reports:renderReports,budgets:renderBudgets,pots:renderPots,bills:renderBills,settings:renderSettings};
-function render(){document.querySelector('#header-signout').hidden=!currentUser;Object.values(renderers).forEach(fn=>fn());const account=data.account||seed.account;document.documentElement.dataset.theme=data.theme==='dark'?'dark':'light';document.querySelector('.user-name').textContent=account.name;const avatar=document.querySelector('.avatar');avatar.textContent=account.photo?'':account.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase();avatar.style.backgroundImage=account.photo?`url("${account.photo}")`:'';renderNotifications();}
+function renderAccount(){
+  const account=data.account||seed.account;
+  document.querySelector('.user-name').textContent=account.name;
+  const avatar=document.querySelector('.avatar');
+  avatar.textContent=account.photo?'':account.name.split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase();
+  avatar.style.backgroundImage=account.photo?`url("${account.photo}")`:'';
+  const status=currentUser?esc(currentUser.email):isHostedPreview?'Guest · Hosted demo':'Guest · Sign in to save to your account';
+  const google=googleEnabled?'<a href="/api/google/start">Continue with Google</a>':isHostedPreview?'<small>Google sign-in requires an account server.</small>':'';
+  document.querySelector('#account-panel').innerHTML=`<strong>${esc(account.name)}</strong><p>${status}</p><button class="row-action" type="button" data-page="settings">${currentUser||isHostedPreview?'Account settings':'Sign in or create an account'}</button>${currentUser?'<button class="row-action" type="button" data-action="logout">Sign out</button>':google}`;
+}
+function render(){Object.values(renderers).forEach(fn=>fn());document.documentElement.dataset.theme=data.theme==='dark'?'dark':'light';renderAccount();renderNotifications();}
 function go(page){ if(!renderers[page])return; document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===`page-${page}`)); document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page)); document.querySelector('#crumb').textContent=page==='bills'?'Recurring bills':page[0].toUpperCase()+page.slice(1); document.querySelector('#sidebar').classList.remove('mobile-open');closeNotifications(); }
 function toast(msg){const el=document.querySelector('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),2600);}
 function buildNotifications(){
@@ -238,9 +249,38 @@ document.querySelector('#collapseBtn').addEventListener('click',()=>document.que
 document.querySelector('#mobileMenu').addEventListener('click',()=>document.querySelector('#sidebar').classList.toggle('mobile-open'));
 document.querySelector('.icon-button').addEventListener('click',e=>{e.stopPropagation();const panel=document.querySelector('#notificationsPanel'),button=e.currentTarget;panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));});
 document.addEventListener('click',e=>{if(!e.target.closest('.notification-wrap'))closeNotifications();});
-document.querySelector('.chevron').addEventListener('click',()=>go('settings'));
+const accountMenu=document.querySelector('#account-menu');
+document.addEventListener('click',e=>{
+  if(!accountMenu.contains(e.target)||e.target.closest('[data-page], [data-action="logout"]'))accountMenu.open=false;
+});
+accountMenu.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&accountMenu.open){
+    accountMenu.open=false;
+    accountMenu.querySelector('summary').focus();
+  }
+});
 document.querySelector('#modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close();});
-async function startApp(){try{const session=await api('/api/session');if(session.user){currentUser=session.user;data={...seed,...session.finance,account:{...(session.finance.account||{}),name:currentUser.name,email:currentUser.email}};normalizeBills();localStorage.setItem(STORE,JSON.stringify(data));}}catch{}rollRecurringBills();render();go('overview');}
+async function startApp(){
+  if(!isHostedPreview)try{
+    const session=await api('/api/session');
+    googleEnabled=session.googleEnabled===true;
+    if(session.user){
+      currentUser=session.user;
+      data={...seed,...session.finance,account:{...(session.finance.account||{}),name:currentUser.name,email:currentUser.email}};
+      normalizeBills();
+      localStorage.setItem(STORE,JSON.stringify(data));
+    }
+  }catch{}
+  rollRecurringBills();
+  render();
+  go('overview');
+  const result=new URLSearchParams(location.search).get('google');
+  if(!isHostedPreview&&result){
+    history.replaceState(null,'',location.pathname+location.hash);
+    if(result==='success'&&currentUser)toast('Signed in with Google.');
+    else toast(result==='existing'?'This email already has a FinWise account. Sign in with your password.':'Google sign-in could not be completed.');
+  }
+}
 startApp();
 
 

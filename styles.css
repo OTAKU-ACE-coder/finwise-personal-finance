@@ -1977,6 +1977,32 @@ html[data-theme="dark"] .text-btn {
 .notification-wrap {
   position:relative
 }
+#account-menu summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+#account-menu summary::-webkit-details-marker {
+  display: none;
+}
+#account-panel {
+  right: 14px;
+  top: 100%;
+  overflow-wrap: anywhere;
+}
+#account-panel p {
+  margin: 6px 0 12px;
+}
+#account-panel button + button {
+  margin-left: 8px;
+}
+#account-panel a,
+#account-panel small {
+  display: block;
+  margin-top: 12px;
+}
 .notifications-panel[hidden] {
   display:none!important
 }
